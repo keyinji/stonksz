@@ -46,7 +46,7 @@ const Middle = () => {
           </Link>
         ))}
       </div>
-      <div className="flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center mx-2">
         <div className="text-2xl md:text-3xl text-white font-bold">
           Don't delay, Invest today
         </div>

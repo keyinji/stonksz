@@ -12,7 +12,7 @@ const Buybutton = () => {
         setButton(!button)
     }
 
-    const {portfolio, setPortfolio} = useAppContext();
+    //const {portfolio, setPortfolio} = useAppContext();
 
 
 
@@ -91,7 +91,6 @@ const Buybutton = () => {
                             </div>
                         </div>
                     </div> : null}
-                    <p>{portfolio} </p>
                 </>
             ))}
         </div>
