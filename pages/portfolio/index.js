@@ -1,82 +1,227 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useRouter } from "next/router";
+import Link from "next/link";
 
-const index = () => {
+const Index = () => {
+  const router = useRouter();
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("token");
+    if (!loggedIn) {
+      router.push("/login");
+    }
+  });
   const [dataCG, setDataCG] = useState(null);
-  const [dataMongo, setDataMongo] = useState(null);
+  const [data2, setData2] = useState(null);
+  const [dataCash, setDataCash] = useState(null);
 
-  //const U = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false";
-  const url = `https://api.coingecko.com/api/v3/coins/bitcoin`;
-
+  const url2 = "/api/bought";
   useEffect(() => {
     axios
-      .get(url)
+      .get(url2, {
+        headers: {
+          "x-access-token": localStorage.getItem("token"),
+        },
+      })
       .then((response) => {
-        setDataCG(response.data);
+        setData2(response.data);
       })
       .catch((error) => {
         console.log(error);
       });
   }, []);
 
+  const url = `https://api.coincap.io/v2/assets?limit=300`;
   useEffect(() => {
     axios
-      .get("http://localhost:8080/bought")
+      .get(url)
       .then((response) => {
-        setDataMongo(response.data);
+        setDataCG(response.data.data);
       })
-      .catch((err) => {
-        console.log(err);
+      .catch((error) => {
+        console.log(error);
       });
   }, []);
-  if (!dataMongo) return null;
+
+  const url3 = "/api/cash";
+  useEffect(() => {
+    axios
+      .get(url3, {
+        headers: {
+          "x-access-token": localStorage.getItem("token"),
+        },
+      })
+      .then((response) => {
+        setDataCash(response.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }, []);
+  if (!dataCash) return null;
+  if (!data2) return null;
   if (!dataCG) return null;
 
-  const percentage =
-     (dataCG.market_data.current_price.usd-dataMongo.boughtPrice)/dataMongo.boughtPrice;
+  const getName = data2.map((coin) => coin.name);
+  const getBoughtPrice = data2.map((coin) => coin.price);
+  const idMongo = data2.map((coin) => coin.idMongo);
+  const getCount = data2.map((coin) => coin.count);
+  const get = (name) => {
+    return dataCG.filter(function (data) {
+      return data.id == name;
+    });
+  };
 
-  const pl =
-    (dataCG.market_data.current_price.usd - dataMongo.boughtPrice) *
-    dataMongo.quantity;
+  const finalData = [];
+  for (let i = 0; i < getName.length; i++) {
+    const newRow = {};
+    const array = get(getName[i]);
+    newRow.symbol = array[0]?.symbol;
+    newRow.name = array[0]?.name;
+    newRow.current_price = parseFloat(array[0]?.priceUsd);
+    newRow.boughtPrice = getBoughtPrice[i];
+    newRow.count = getCount[i];
+    newRow.id = array[0]?.id;
+    newRow.idMongo = idMongo[i];
+    finalData.push(newRow);
+  }
+  const arrPL = finalData.map(
+    (coin) => (coin.current_price - coin.boughtPrice) * coin.count
+  );
+  const difference = arrPL.reduce((accumulator, value) => {
+    return accumulator + value;
+  }, 0);
+
+  const arrAssets = finalData.map((coin) => coin.current_price * coin.count);
+
+  const assets = arrAssets.reduce((accumulator, value) => {
+    return accumulator + value;
+  }, 0);
+
+  const networth = 50000 + difference + dataCash.cash;
+
+  const percentageChange = ((networth - 50000) / 50000) * 100;
   return (
-    <div>
-      <div className="md:w-2/3 mx-auto">
+    <div className="">
+      <div className="mt-2 flex items-center justify-center text-3xl md:text-4xl">
+        ${networth.toFixed(2)}
+        <span
+          className={
+            difference + dataCash.cash > 0
+              ? "text-green-600 text-lg md:text-2xl ml-1"
+              : "text-red-600 text-lg md:text-2xl ml-1"
+          }
+        >
+          ({percentageChange.toFixed(2)}%)
+        </span>
+      </div>
+      <div className="flex md:w-2/3 justify-between mx-auto px-2">
+        <div className="text-xl font-bold">Assets:</div>
+        <div className="text-xl">${assets.toFixed(2)}</div>
+      </div>
+      <div className="flex md:w-2/3 justify-between mx-auto px-2">
+        <div className="text-xl font-bold">Cash:</div>
+        <div className="text-xl">${(networth - assets).toFixed(2)}</div>
+      </div>
+      <div className="flex md:w-2/3 justify-between m-auto px-2">
+        <div className="text-xl font-bold">
+          {difference + dataCash.cash > 0 ? "All Profits:" : "All Losses:"}
+        </div>
+        <div className="flex">
+          <div
+            className={
+              difference + dataCash.cash > 0
+                ? "text-green-600 text-xl mr-1"
+                : "text-red-600 text-xl mr-1"
+            }
+          >
+            ${(difference + dataCash.cash).toFixed(2)}
+          </div>
+          <div
+            className={
+              difference + dataCash.cash > 0
+                ? "text-green-600 text-xl"
+                : "text-red-600 text-xl"
+            }
+          >
+            ({percentageChange.toFixed(2)}%)
+          </div>
+        </div>
+      </div>
+      {/*Table*/}
+      <div className="md:w-2/3 mx-auto mt-2">
+        <div className="text-lg font-bold px-2">Your Assets</div>
         <table className="table">
           <thead className="leading-8">
             <tr className="">
               <th>Coin</th>
-              <th>Price</th>
+              <th className="hidden md:table-cell">Price</th>
               <th>Bought Price</th>
-              <th>Quantity</th>
+              <th className="hidden md:table-cell">Quantity</th>
               <th className="hidden md:table-cell">Percentage +/-</th>
-              <th className="hidden md:table-cell">P&L</th>
+              <th>P&L</th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              key={dataCG.id}
-              className="leading-7 hover:bg-gray-100 cursor-pointer"
-            >
-              <td className="flex">
-                <a>
-                  <img
-                    src={dataCG.image.large}
-                    style={{ width: 25, height: 25, marginRight: 10 }}
-                  />
-                </a>
-                <div className="px-4">
-                  <b>{dataCG.name}</b>
-                </div>
-                <div className="hidden md:table-cell">
-                  {dataCG.symbol.toUpperCase()}
-                </div>
-              </td>
-              <td>${dataCG.market_data.current_price.usd.toFixed(2)}</td>
-              <td>{dataMongo.boughtPrice.toFixed(2)}</td>
-              <td>{dataMongo.quantity}</td>
-              <td className={pl > 0 ? "text-green-600" : "text-red-600"}>{percentage.toFixed(2)}%</td>
-              <td className={pl > 0 ? "text-green-600" : "text-red-600"}>{pl.toFixed(2)}</td>
-            </tr>
+            {finalData.map((coin) => (
+              <Link
+                href={{ pathname: "/portfolio/[id]" }}
+                as={`/portfolio/${coin.idMongo}`}
+                key={coin.name}
+              >
+                <tr className="leading-7 hover:bg-gray-100 cursor-pointer">
+                  <td className="flex">
+                    <a>
+                      <img
+                        src={`https://assets.coincap.io/assets/icons/${coin.symbol.toLowerCase()}@2x.png`}
+                        style={{ width: 25, height: 25, marginRight: 10 }}
+                      />
+                    </a>
+                    <div className="px-2 md:px-4">
+                      <b>{coin.name}</b>
+                    </div>
+                    <div className="hidden md:table-cell">
+                      {coin.symbol?.toUpperCase()}
+                    </div>
+                  </td>
+                  <td className="hidden md:table-cell">
+                    ${coin.current_price?.toFixed(2)}
+                  </td>
+                  <td>${coin.boughtPrice.toFixed(2)}</td>
+                  <td className="hidden md:table-cell">{coin.count}</td>
+                  <td
+                    className={
+                      ((coin.current_price - coin.boughtPrice) /
+                        coin.boughtPrice) *
+                        100 >
+                      0
+                        ? "text-green-600 hidden md:table-cell"
+                        : "text-red-600 hidden md:table-cell"
+                    }
+                  >
+                    {(
+                      ((coin.current_price - coin.boughtPrice) /
+                        coin.boughtPrice) *
+                      100
+                    ).toFixed(2)}
+                    %
+                  </td>
+                  <td
+                    className={
+                      (coin.current_price - coin.boughtPrice) * coin.count > 0
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }
+                  >
+                    $
+                    {(
+                      (coin.current_price - coin.boughtPrice) *
+                      coin.count
+                    )?.toFixed(2)}
+                  </td>
+                </tr>
+              </Link>
+            ))}
           </tbody>
         </table>
       </div>
@@ -84,4 +229,4 @@ const index = () => {
   );
 };
 
-export default index;
+export default Index;

@@ -1,25 +1,35 @@
 import Image from "next/image";
 import logo2 from "../components/images/logo2.png";
-import { SearchIcon, LogoutIcon } from "@heroicons/react/outline";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
-import { TbDiamond } from "react-icons/Tb";
-import { TbLogout } from "react-icons/Tb";
-import { signOut } from "next-auth/react";
 import { IoMdClose } from "react-icons/io";
 import { IoMdMenu } from "react-icons/io";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 
 function Header() {
-  const { data: session } = useSession();
+  const [session, setSession] = useState();
+  useEffect(() => {
+    const item = localStorage.getItem("token");
+    if (item) {
+      setSession(true);
+    }
+  }, []);
+
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
 
+  const logout = () => {
+    localStorage.removeItem("token");
+    router.push("/login");
+    router.reload(window.location.pathname);
+  };
+
   return (
-    <div className="shadow-md stick-top z-50 bg-white md:flex md:items-center py-1 md:h-12">
+    <div className="shadow-md w-full h-12 top-0 sticky z-10 scroll-pt-12 bg-white md:flex md:items-center py-1 md:h-12">
       {/*Left*/}
       <div className="flex items-center px-2">
-        <Link href="/">
+        <Link href="/" passHref>
           <Image
             className="cursor-pointer"
             src={logo2}
@@ -40,47 +50,47 @@ function Header() {
           <div
             className={
               open
-                ? "flex-col ml-2"
-                : "hidden md:flex md:flex-grow md:items-center md:justify-center md:space-x-10 ml-2 md:ml-0"
+                ? "flex-col px-2 bg-white w-full shadow-lg"
+                : "hidden md:flex md:flex-grow md:items-center md:space-x-8 ml-2 md:ml-0"
             }
           >
-            <Link href="/all">
-              <div className="cursor-pointer h-10 hover:border-b-2 border-b-blue-500 my-2 md:my-0">
-                <button className="h-10">All</button>
+            <Link href="/learn" passHref>
+              <div className="cursor-pointer h-10 hover:border-b-2 border-b-blue-500 my-2 md:my-0 md:ml-6">
+                <button className="h-10">Learn</button>
               </div>
             </Link>
-            <Link href="/market">
+            <Link href="/markets" passHref>
               <div className="cursor-pointer h-10 hover:border-b-2 border-b-blue-500 my-2 md:my-0">
-                <button className="h-10">Market Cap</button>
+                <button className="h-10">Markets</button>
               </div>
             </Link>
-            <Link href="/gainers">
-              <div className="cursor-pointer h-10 hover:border-b-2 border-b-blue-500 my-2 md:my-0">
-                <button className="h-10">Gainers</button>
-              </div>
-            </Link>
-            <Link href="/losers">
-              <div className="cursor-pointer h-10 hover:border-b-2 border-b-blue-500 my-2 md:my-0">
-                <button className="h-10">Losers</button>
-              </div>
-            </Link>
-            <Link href="/portfolio">
+            <Link href="/portfolio" passHref>
               <div className="cursor-pointer h-10 hover:border-b-2 border-b-blue-500 my-2 md:my-0">
                 <button className="h-10">Portfolio</button>
               </div>
             </Link>
+            <Link href="/premium">
+              <div className="cursor-pointer h-10 hover:border-b-2 border-b-blue-500 my-2 md:my-0">
+                <button className="h-10">Premium</button>
+              </div>
+            </Link>
           </div>
           <div className="bg-white flex gap-10 ml-auto md:ml-0">
-            <TbDiamond className="text-3xl cursor-pointer absolute right-24 mr-3 top-3 text-gray-700 md:relative md:right-0 md:top-0 md:mr-0 hover:text-black" />
-            <TbLogout
-              onClick={() => signOut()}
-              className="text-3xl cursor-pointer absolute right-14 top-3 text-gray-700 md:relative md:right-0 md:top-0 hover:text-black mr-1 md:mr-3"
-            />
+            <button
+              onClick={logout}
+              className=" cursor-pointer absolute right-14 top-3 text-white p-1 font-semibold md:relative md:right-0 md:top-0 mr-1 md:mr-3 bg-blue-500 rounded-md hover:bg-blue-700"
+            >
+            Log Out
+            </button>
           </div>
         </>
       ) : (
-        <div className="ml-auto text-right">
-          <button>Sign In</button>
+        <div className="ml-auto text-right absolute top-3 right-3">
+          <Link href="/login">
+            <button className="hover:text-blue-500 font-semibold">
+              Sign In
+            </button>
+          </Link>
         </div>
       )}
     </div>

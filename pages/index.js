@@ -3,10 +3,17 @@ import Image from 'next/image'
 import Top from '../components/Top'
 import Middle from '../components/Middle'
 import Bottom from '../components/Bottom'
-import { getSession } from "next-auth/react"
-
+import { useRouter } from 'next/router'
+import { useEffect } from "react";
 
 const Home = () => {
+  const router = useRouter()
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("token")
+    if(!loggedIn){
+      router.push("/login")
+    }
+  })
   return (
     <div>
       <Top />
@@ -18,21 +25,4 @@ const Home = () => {
 
 export default Home
 
-
-export async function getServerSideProps(context) {
-    const session = await getSession(context)
-  
-    if (!session) {
-      return {
-        redirect: {
-          destination: '/auth/signin',
-          permanent: false,
-        },
-      }
-    }
-  
-    return {
-      props: { session }
-    }
-  }
 
